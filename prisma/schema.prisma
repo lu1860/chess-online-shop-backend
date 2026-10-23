@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum user_role {
+  admin
+  user
+}
+
+enum product_category {
+  tableros
+  piezas
+  relojes
+  libros
+}
+
+/// Usuarios de la tienda. La contraseña se guarda como hash de bcrypt, nunca en texto plano.
+model users {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(100)
+  email      String    @unique @db.VarChar(150)
+  password   String    @db.VarChar(255)
+  role       user_role @default(user)
+  status     String    @default("ACTIVE") @db.VarChar(20)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  orders     orders[]
+}
+
+/// Catálogo: los mismos productos que tenía el arreglo de la Entrega 1.
+/// El borrado es lógico (state = REMOVED) para no romper los pedidos que ya los referencian.
+model products {
+  id          Int              @id @default(autoincrement())
+  name        String           @db.VarChar(150)
+  category    product_category
+  description String
+  price       Int
+  image       String           @db.VarChar(500)
+  image_alt   String           @db.VarChar(255)
+  state       String           @default("ACTIVE") @db.VarChar(20)
+  deleted_at  DateTime?        @db.Timestamptz(6)
+  created_at  DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime         @default(now()) @updatedAt @db.Timestamptz(6)
+  orders      orders[]
+
+  @@index([state, category])
+}
+
+/// Interacción: el pedido que antes solo validaba el formulario de la Entrega 1.
+/// Relaciona al usuario que lo hizo (sale del token) con el producto pedido.
+model orders {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  product_id     Int
+  customer_name  String   @db.VarChar(100)
+  customer_email String   @db.VarChar(150)
+  quantity       Int
+  unit_price     Int
+  total          Int
+  status         String   @default("PENDIENTE") @db.VarChar(20)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  users          users    @relation(fields: [user_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  products       products @relation(fields: [product_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([user_id])
+  @@index([product_id])
+}

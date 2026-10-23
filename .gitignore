@@ -1,0 +1,16 @@
+node_modules
+
+# Variables de entorno: NUNCA se suben (credenciales y JWT_SECRET)
+.env
+.env.*
+!.env.example
+
+# Código generado
+/src/generated/prisma
+dist
+
+# Editor y sistema operativo
+.vscode
+.idea
+.DS_Store
+Thumbs.db
